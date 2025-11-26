@@ -1,7 +1,7 @@
 <?php
 // index.php
 $activeTab = 'home';
-include 'includes/header.php';
+include ('header.php');
 ?>
 
 <h2 class="app-section-title">Welcome to Golden Plate</h2>
@@ -24,5 +24,5 @@ include 'includes/header.php';
 </div>
 
 <?php
-include 'includes/footer.php';
+include ('footer.php');
 ?>
