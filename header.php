@@ -21,7 +21,7 @@ $userRole = $_SESSION['user_role'] ?? null;
 <head>
     <meta charset="UTF-8">
     <title>Golden Plate - Scheduling App</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="app-wrapper">
