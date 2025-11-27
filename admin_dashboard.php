@@ -1,8 +1,8 @@
 <?php
 // admin_dashboard.php
 $activeTab = 'admin';
-require 'includes/db.php';
-include 'includes/header.php';
+require 'db.php';
+include 'header.php';
 
 // Only admin can see this page
 if (($_SESSION['user_role'] ?? '') !== 'admin') {
