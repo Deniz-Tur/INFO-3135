@@ -18,8 +18,13 @@ $successMessage='';
 
 $tables=[];
 
+// DEBUG: Check what's in the tables table
+echo "<h3>DEBUG INFO:</h3>";
+$debugStmt = $pdo->query("SELECT * FROM tables where status= 'available' order by capacity");
+$allTables = $debugStmt->fetchAll();
+echo "Total tables in database: " . count($allTables) . "<br>";
 // fetch available tables
-$tablesStmt=$pdo->query("Select * from tables where status= 'available' order by capacity");
+//$tablesStmt=$pdo->query("Select * from tables where status= 'available' order by capacity");
 //$tables= $tablesStmt -> fetchAll();
 
 // fetch available time slots 

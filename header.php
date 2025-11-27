@@ -56,7 +56,7 @@ $userRole = $_SESSION['user_role'] ?? null;
             </a>
 
             <?php if ($userRole === 'customer'): ?>
-                <a href="reservations.php"
+                <a href="booking.php"
                    class="tab-link <?php echo $activeTab === 'reservations' ? 'active' : ''; ?>">
                     <span class="tab-icon">📅</span> Make Reservation
                 </a>
