@@ -72,7 +72,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
             $insertStmt = $pdo->prepare('
                 INSERT INTO reservations
                 (user_id, table_id, reservation_date, reservation_time, party_size, special_requests, status, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, "pending", NOW())
+                VALUES (?, ?, ?, ?, ?, ?, "Confirmed", NOW())
             ');
             $insertStmt->execute([
                 $_SESSION['user_id'],
@@ -82,7 +82,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
                 $partySize,
                 $specialReq
             ]);
-            $successMessage = 'Reservation created successfully! Waiting for admin approval.';
+            $successMessage = 'Reservation created successfully! ';
         }
     }
 }
