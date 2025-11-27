@@ -1,0 +1,236 @@
+/* ===== General Page Layout ===== */
+body {
+    font-family: Arial, sans-serif;
+    background: #fff8f0; /* Soft warm background */
+    margin: 20px;
+    padding: 0;
+    color: #4a2c2a; /* Deep brown text */
+}
+
+h1, h2 {
+    text-align: center;
+    color: #b43f2f; /* Restaurant red */
+    margin-bottom: 15px;
+}
+
+/* ===== Navigation (Prev / Next Month) ===== */
+.calendar-nav {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.calendar-nav a {
+    margin: 0 15px;
+    text-decoration: none;
+    color: #b43f2f;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.calendar-nav a:hover {
+    text-decoration: underline;
+}
+
+/* ===== Calendar Layout ===== */
+.calendar-container {
+    width: 90%;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+}
+
+/* ===== Weekdays Bar ===== */
+.weekdays div {
+    background: #ffdfc7; /* Light orange */
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+    border-radius: 6px;
+    color: #8a3d2f;
+}
+
+/* ===== Day Boxes ===== */
+.day-box {
+    background: #fffdf8;
+    border: 1px solid #e6c4a8;
+    border-radius: 6px;
+    min-height: 120px;
+    padding: 6px;
+    position: relative;
+    overflow-y: auto;
+}
+
+.day-box.empty {
+    background: none;
+    border: none;
+}
+
+/* ===== Day Number ===== */
+.day-number a {
+    font-weight: bold;
+    font-size: 16px;
+    color: #b43f2f;
+    text-decoration: none;
+}
+
+.day-number a:hover {
+    text-decoration: underline;
+}
+
+/* ===== Shift Box ===== */
+.shift-box {
+    background: #ffd9b3;       /* Warm pastel orange */
+    border-left: 4px solid #b43f2f; /* Deep restaurant red accent */
+    padding: 4px 6px;
+    margin-top: 6px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+/* ===== Buttons (used in add/edit pages) ===== */
+button {
+    background: #b43f2f;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #8d2f24;
+}
+
+/* ===== Table (used in view_schedule.php, day_view.php) ===== */
+table {
+    width: 90%;
+    margin: 0 auto;
+    border-collapse: collapse;
+    background: #fffaf4;
+}
+
+th {
+    background: #ffdfc7;
+    color: #8a3d2f;
+    padding: 10px;
+}
+
+td {
+    border: 1px solid #e6c4a8;
+    padding: 8px;
+    text-align: center;
+}
+
+/* Highlight today's date */
+.day-box.today {
+    border: 3px solid #e67e22;     
+    background-color: #fff3e0;     
+    box-shadow: 0 0 10px rgba(230, 126, 34, 0.5);
+    transition: 0.2s;
+}
+
+.day-box.today .day-number a {
+    color: #d35400;                
+    font-weight: bold;           
+}
+
+.day-box.today:hover {
+    transform: scale(1.02);       
+}
+
+/* ===== Edit / Add Schedule Form Layout ===== */
+
+.form-wrapper {
+    width: 500px;
+    margin: 40px auto;
+    background: #fffaf4;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.1);
+}
+
+.form-wrapper h1 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #b43f2f;
+}
+
+.form-group {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #8a3d2f;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 8px;
+    border: 1px solid #e6c4a8;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #fff;
+}
+
+.button-row {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.button-row button {
+    background-color: #b43f2f;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-weight: bold;
+}
+
+.button-row button:hover {
+    background-color: #8d2f24;
+}
+
+.back-links {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.back-links a {
+    color: #b43f2f;
+    font-weight: bold;
+    margin-right: 15px;
+    text-decoration: none;
+}
+
+.back-links a:hover {
+    text-decoration: underline;
+}
+
+/* ===== Button Row above the table ===== */
+.actions-row {
+    width: 90%;           
+    max-width: 1000px;     
+    margin: 0 auto 10px;     
+    text-align: left;      
+    padding-left: 5px;       
+}
+
+.actions-row a {
+    margin-right: 15px;
+    color: #b43f2f;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.actions-row a:hover {
+    text-decoration: underline;
+}
