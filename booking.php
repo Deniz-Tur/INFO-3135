@@ -16,11 +16,11 @@ require 'header.php';
 $errors=[];
 $successMessage='';
 
-
+$tables=[];
 
 // fetch available tables
-$tablesStmt="Select * from tables where status= 'available' order by capacity";
-$tables= $tablesStmt -> fetchAll();
+$tablesStmt=$pdo->query("Select * from tables where status= 'available' order by capacity");
+//$tables= $tablesStmt -> fetchAll();
 
 // fetch available time slots 
 $time_slots= [
@@ -30,7 +30,7 @@ $time_slots= [
 ];
 
 // handle form submission
-if($_SERVER['REQUEST_METHOD'] == 'POST'){
+if($_SERVER['REQUEST_METHOD'] === 'POST'){
     $tableId= $_POST['table_id'];
     $date=$_POST['reservation_date'];
     $time=$_POST['reservation_time'];
