@@ -20,7 +20,7 @@ $successMessage='';
 
 // fetch available tables
 $tablesStmt="Select * from tables where status= 'available' order by capacity";
-$tables=$tableStmt->fetchAll();
+$tables= $tablesStmt -> fetchAll();
 
 // fetch available time slots 
 $time_slots= [
