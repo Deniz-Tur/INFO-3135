@@ -51,7 +51,7 @@ $activeTab = $activeTab ?? '';
                     <span class="tab-icon">👤</span> Dashboard
                 </a>
 
-                <a href="reservations.php"
+                <a href="booking.php"
                    class="tab-link <?php echo $activeTab === 'reservations' ? 'active' : ''; ?>">
                     <span class="tab-icon">📅</span> Make Reservation
                 </a>

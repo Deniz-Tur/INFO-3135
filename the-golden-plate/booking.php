@@ -1,6 +1,5 @@
 <?php 
-
-// booking.php- make reservtion page
+// reservations.php - make reservation page
 session_start();
 
 // check if user is logged in
@@ -10,25 +9,18 @@ if(!isset($_SESSION['user_id'])){
 }
 
 $activeTab='reservations';
-require 'db.php';
-require 'header.php';
+require 'includes/db.php';
+include 'includes/header.php';
 
 $errors=[];
 $successMessage='';
 
-$tables=[];
-
-// DEBUG: Check what's in the tables table
-echo "<h3>DEBUG INFO:</h3>";
-$debugStmt = $pdo->query("SELECT * FROM tables where status= 'available' order by capacity");
-$allTables = $debugStmt->fetchAll();
-echo "Total tables in database: " . count($allTables) . "<br>";
 // fetch available tables
-//$tablesStmt=$pdo->query("Select * from tables where status= 'available' order by capacity");
-//$tables= $tablesStmt -> fetchAll();
+$tablesStmt=$pdo->query("SELECT * FROM tables WHERE status = 'available' ORDER BY capacity");
+$tables = $tablesStmt->fetchAll();
 
 // fetch available time slots 
-$time_slots= [
+$timeSlots = [
     "12:00 PM","12:30 PM","1:00 PM","1:30 PM","2:00 PM",
     "5:00 PM", "5:30 PM","6:00 PM","6:30 PM", "7:00 PM",
     "7:30 PM", "8:00 PM","8:30 PM","9:00 PM","9:30 PM"
@@ -36,71 +28,78 @@ $time_slots= [
 
 // handle form submission
 if($_SERVER['REQUEST_METHOD'] === 'POST'){
-    $tableId= $_POST['table_id'];
-    $date=$_POST['reservation_date'];
-    $time=$_POST['reservation_time'];
-    $partySize= $POST['party_size'];
-    $special_requests=$_POST['special_request'];
+    $tableId = $_POST['table_id'] ?? '';
+    $date = $_POST['reservation_date'] ?? '';
+    $time = $_POST['reservation_time'] ?? '';
+    $partySize = $_POST['party_size'] ?? '';
+    $specialReq = trim($_POST['special_requests'] ?? '');
 
-//validation
-if($tableId===''){
-    $errors[]='Please select a table. ';
-}
-if($date==='')
-{
-    $errors[]= 'Reservation date is required';
-}
-if($time===''){
-    $errors[]='Reservation time is required';
-}
-if($partySize=== '' || $partySize<1){
-    $errors[]= 'Number of guest sis required.';
-}
-// validate date(cannot book past dates)
-    $today= date('Y-m-d');
- if($date < $today){
-        $errors="cannot book for past dates! ";
+    // validation
+    if($tableId === ''){
+        $errors[] = 'Please select a table.';
     }
-if(empty($errors)){
-    // check if table is already booked at that time and date
-    $checkStmt = $pdo->prepare('
-    Select * from reservation
-    where table_id=?
-    and reservation_date=?
-    and reservation_time=?
-    and status != "Cancelled"');
-    $checkStmt->execute([$tableId, $date, $time]);
+    if($date === ''){
+        $errors[] = 'Reservation date is required.';
+    }
+    if($time === ''){
+        $errors[] = 'Reservation time is required.';
+    }
+    if($partySize === '' || $partySize < 1){
+        $errors[] = 'Number of guests is required.';
+    }
+    
+    // validate date (cannot book past dates)
+    $today = date('Y-m-d');
+    if($date < $today){
+        $errors[] = "Cannot book for past dates!";
+    }
+    
+    if(empty($errors)){
+        // check if table is already booked at that time and date
+        $checkStmt = $pdo->prepare('
+            SELECT * FROM reservations
+            WHERE table_id = ?
+            AND reservation_date = ?
+            AND reservation_time = ?
+            AND status != "cancelled"
+        ');
+        $checkStmt->execute([$tableId, $date, $time]);
 
-    if($checkStmt->fetch()){
-        $errors[]='This table is already booked at this time. Please select another table or time. ';
-    } else{
-        // insert reservations
-        $isnertStmt= $pdo->prepare('Insert into reservations
-        (user_id, table_id, reservation_date, reservation_time, party_size, special_requests, status, created_at
-        values(?,?,?,?,?,?,"pending",NOW()');
-        $insertStmt->execute([$_SESSIONS['user_id'],
-              $tableId,
-              $date,
-              $time,
-              $partySize,
-              $specialReq
+        if($checkStmt->fetch()){
+            $errors[] = 'This table is already booked at this time. Please select another table or time.';
+        } else {
+            // insert reservation
+            $insertStmt = $pdo->prepare('
+                INSERT INTO reservations
+                (user_id, table_id, reservation_date, reservation_time, party_size, special_requests, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, "pending", NOW())
+            ');
+            $insertStmt->execute([
+                $_SESSION['user_id'],
+                $tableId,
+                $date,
+                $time,
+                $partySize,
+                $specialReq
             ]);
-            $successMessage= 'Reservation created successfully! Waiting for admin approval.';
+            $successMessage = 'Reservation created successfully! Waiting for admin approval.';
+        }
     }
 }
-
-
-}
-   
-
 ?>
+
+<h2 class="app-section-title">📅 Make a Table Reservation</h2>
+<p class="app-section-subtitle">
+    Reserve your table at Golden Plate Restaurant.
+</p>
+
 <?php if (!empty($errors)): ?>
     <div class="card" style="border-left: 4px solid #c0392b;">
         <h3 class="card-title">There were some problems:</h3>
-       <ul class="card-text" style="margin-left: 18px; list-style: disc;">
-           <?php foreach ($errors as $err): ?>
-               <li><?php echo htmlspecialchars($err); ?></li>
-           <?php endforeach; ?>
+        <ul class="card-text" style="margin-left: 18px; list-style: disc;">
+            <?php foreach ($errors as $err): ?>
+                <li><?php echo htmlspecialchars($err); ?></li>
+            <?php endforeach; ?>
         </ul>
     </div>
 <?php endif; ?>
@@ -108,8 +107,8 @@ if(empty($errors)){
 <?php if ($successMessage): ?>
     <div class="card" style="border-left: 4px solid #27ae60;">
         <p class="card-text">
-           <?php echo htmlspecialchars($successMessage); ?>
-           <a href="my_reservations.php" class="btn btn-primary" style="margin-left:10px;">View My Reservations</a>
+            <?php echo htmlspecialchars($successMessage); ?>
+            <a href="my_reservations.php" class="btn btn-primary" style="margin-left:10px;">View My Reservations</a>
         </p>
     </div>
 <?php endif; ?>
@@ -122,7 +121,7 @@ if(empty($errors)){
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
             <?php foreach ($tables as $table): ?>
                 <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f9f9f9; text-align: center;">
-                   <h4 style="margin-top: 0; color: #d4a024;">Table <?php echo htmlspecialchars($table['table_number']); ?></h4>
+                    <h4 style="margin-top: 0; color: #d4a024;">Table <?php echo htmlspecialchars($table['table_number']); ?></h4>
                     <p style="margin: 5px 0; font-size: 14px;">
                         <strong>Capacity:</strong> <?php echo htmlspecialchars($table['capacity']); ?> people
                     </p>
@@ -149,18 +148,18 @@ if(empty($errors)){
         </div>
         
         <div style="margin-bottom: 10px;">
-           <label>Reservation Date</label><br>
+            <label>Reservation Date</label><br>
             <input type="date" name="reservation_date" 
                    min="<?php echo date('Y-m-d'); ?>"
-                  value="<?php echo isset($date) ? htmlspecialchars($date) : ''; ?>"
-                  required
+                   value="<?php echo isset($date) ? htmlspecialchars($date) : ''; ?>"
+                   required
                    style="padding: 6px 10px; width: 100%; max-width: 250px; border-radius: 6px; border: 1px solid #ccc;">
         </div>
         
         <div style="margin-bottom: 10px;">
             <label>Reservation Time</label><br>
-           <select name="reservation_time" required
-                   style="padding: 6px 10px; width: 100%; max-width: 250px; border-radius: 6px; border: 1px solid #ccc;">
+            <select name="reservation_time" required
+                    style="padding: 6px 10px; width: 100%; max-width: 250px; border-radius: 6px; border: 1px solid #ccc;">
                 <option value="">-- Choose a time --</option>
                 <?php foreach ($timeSlots as $slot): ?>
                     <option value="<?php echo $slot; ?>" <?php echo (isset($time) && $time == $slot) ? 'selected' : ''; ?>>
@@ -185,10 +184,10 @@ if(empty($errors)){
                       placeholder="Any dietary restrictions, celebrations, or special requirements..."><?php echo isset($specialReq) ? htmlspecialchars($specialReq) : ''; ?></textarea>
         </div>
         
-       <button type="submit" class="btn btn-primary">Book Table</button>
+        <button type="submit" class="btn btn-primary">Book Table</button>
     </form>
 </div>
 
 <?php
-include 'footer.php';
-193?>
+include 'includes/footer.php';
+?>

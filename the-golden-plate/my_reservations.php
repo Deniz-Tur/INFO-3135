@@ -9,8 +9,8 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $activeTab = 'my_reservations';
-require 'db.php';
-include 'header.php';
+require 'includes/db.php';
+include 'includes/header.php';
 
 $userId = $_SESSION['user_id'];
 $successMessage = '';
@@ -201,5 +201,5 @@ $pastReservations = $pastStmt->fetchAll();
 </div>
 
 <?php
-include 'footer.php';
+include 'includes/footer.php';
 ?>
