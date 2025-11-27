@@ -1,8 +1,8 @@
 <?php
 // login.php
 $activeTab = 'login';
-require 'includes/db.php';
-include 'includes/header.php';
+require 'db.php';
+include 'header.php';
 
 $errors = [];
 
