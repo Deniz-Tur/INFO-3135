@@ -1,118 +1,184 @@
 <?php
-include("../db.php");
+session_start();
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+chdir(__DIR__ . '/..');
 
-// Schedule ID from URL
-$id = $_GET['id'] ?? null;
-if (!$id) {
-    die("No schedule ID provided.");
+require 'includes/db.php';
+
+// Must be admin
+if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+    echo "Access denied. Admins only.";
+    exit;
 }
 
-// Fetch schedule info
-$schedule_sql = "
-    SELECT * FROM schedules 
-    WHERE schedule_id = $id
-";
-$schedule_result = $conn->query($schedule_sql);
-$schedule = $schedule_result->fetch_assoc();
+$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+if ($id <= 0) {
+    echo "Invalid schedule ID.";
+    exit;
+}
+
+// Fetch schedule
+$stmt = $pdo->prepare("
+    SELECT * FROM schedules
+    WHERE schedule_id = :id
+");
+$stmt->execute([':id' => $id]);
+$schedule = $stmt->fetch();
+
 if (!$schedule) {
-    die("Schedule not found.");
+    echo "Schedule not found.";
+    exit;
 }
 
-// Fetch all employees (for dropdown)
-$employee_sql = "SELECT * FROM employees ORDER BY name ASC";
-$employees = $conn->query($employee_sql);
+// Fetch employees
+$empStmt = $pdo->query("SELECT employee_id, name, role FROM employees ORDER BY name");
+$employees = $empStmt->fetchAll();
 
-// Extract year + month for back buttons
-$year  = date("Y", strtotime($schedule['shift_date']));
-$month = date("m", strtotime($schedule['shift_date']));
+$errors = [];
 
-// Save changes
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $employee_id = $_POST['employee_id'];
-    $shift_date  = $_POST['shift_date'];
-    $shift_start = $_POST['shift_start'];
-    $shift_end   = $_POST['shift_end'];
-    $notes       = $_POST['notes'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $employee_id = $_POST['employee_id'] ?? '';
+    $shift_date  = $_POST['shift_date'] ?? '';
+    $shift_start = $_POST['shift_start'] ?? '';
+    $shift_end   = $_POST['shift_end'] ?? '';
+    $notes       = $_POST['notes'] ?? '';
 
-    $update_sql = "
-        UPDATE schedules SET
-            employee_id = '$employee_id',
-            shift_date  = '$shift_date',
-            shift_start = '$shift_start',
-            shift_end   = '$shift_end',
-            notes       = '$notes'
-        WHERE schedule_id = $id
-    ";
+    if ($employee_id === '' || $shift_date === '' || $shift_start === '' || $shift_end === '') {
+        $errors[] = "All required fields must be filled.";
+    }
 
-    if ($conn->query($update_sql)) {
-        header("Location: view_schedule.php?date=" . $shift_date);
+    if (empty($errors)) {
+        $update = $pdo->prepare("
+            UPDATE schedules
+            SET employee_id = :employee_id,
+                shift_date  = :shift_date,
+                shift_start = :shift_start,
+                shift_end   = :shift_end,
+                notes       = :notes
+            WHERE schedule_id = :id
+        ");
+        $update->execute([
+            ':employee_id' => $employee_id,
+            ':shift_date'  => $shift_date,
+            ':shift_start' => $shift_start,
+            ':shift_end'   => $shift_end,
+            ':notes'       => $notes,
+            ':id'          => $id
+        ]);
+
+        header("Location: schedule/view_schedule.php?date=" . urlencode($shift_date));
         exit;
-    } else {
-        echo "Error updating schedule: " . $conn->error;
     }
 }
+
+// Highlight tab
+$activeTab = 'calendar';
+
+// include header
+include 'includes/header.php';
 ?>
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Edit Schedule</title>
-    <link rel="stylesheet" href="schedule.css">
-</head>
-<body>
+<!-- Load shared CSS -->
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="schedule.css">
 
-<div class="form-wrapper">
+<!-- Hide original nav in header.php -->
+<style> nav.tabs-nav { display: none; } </style>
 
-    <h1>Edit Schedule for <?= $schedule['shift_date'] ?></h1>
+<!-- Rebuild navigation bar -->
+<nav class="tabs-nav">
+    <a href="/the-golden-plate/index.php" class="tab-link">
+        <span class="tab-icon">🏠</span> Home
+    </a>
+    <a href="/the-golden-plate/admin_dashboard.php" class="tab-link">
+        <span class="tab-icon">🛠</span> Admin Dashboard
+    </a>
+    <a href="/the-golden-plate/admin_reservations.php" class="tab-link">
+        <span class="tab-icon">📋</span> Reservations
+    </a>
+    <a href="/the-golden-plate/schedule/calendar.php"
+       class="tab-link active">
+        <span class="tab-icon">📆</span> Staff Calendar
+    </a>
+    <a href="/the-golden-plate/logout.php" class="tab-link">
+        <span class="tab-icon">🚪</span> Logout
+    </a>
+</nav>
 
-    <form action="" method="POST">
+<div class="app-wrapper">
 
-        <div class="form-group">
-            <label>Employee:</label>
-            <select name="employee_id" required>
-                <?php while ($emp = $employees->fetch_assoc()): ?>
-                    <option value="<?= $emp['employee_id'] ?>"
-                        <?= ($emp['employee_id'] == $schedule['employee_id']) ? "selected" : "" ?>>
-                        <?= $emp['name'] ?> (<?= $emp['role'] ?>)
-                    </option>
-                <?php endwhile; ?>
-            </select>
+    <!-- ===== HEADER CARD (same style as add/view) ===== -->
+    <div class="card card-page-header">
+
+        <div class="page-title">Edit Staff Schedule</div>
+
+        <div class="action-row view-header">
+            <a href="view_schedule.php?date=<?= htmlspecialchars($schedule['shift_date']); ?>"
+               class="btn-white">&larr; Back to Day Schedule</a>
         </div>
 
-        <div class="form-group">
-            <label>Date:</label>
-            <input type="date" name="shift_date" value="<?= $schedule['shift_date'] ?>" required>
-        </div>
+    </div>
 
-        <div class="form-group">
-            <label>Start Time:</label>
-            <input type="time" name="shift_start" value="<?= substr($schedule['shift_start'], 0, 5) ?>" required>
-        </div>
 
-        <div class="form-group">
-            <label>End Time:</label>
-            <input type="time" name="shift_end" value="<?= substr($schedule['shift_end'], 0, 5) ?>" required>
-        </div>
+    <!-- ===== FORM CARD ===== -->
+    <div class="card form-card">
 
-        <div class="form-group">
-            <label>Notes:</label>
-            <textarea name="notes" rows="3"><?= $schedule['notes'] ?></textarea>
-        </div>
+        <?php if (!empty($errors)): ?>
+            <div style="color:#c0392b; margin-bottom: 12px;">
+                <?php foreach ($errors as $e): ?>
+                    <div><?= htmlspecialchars($e); ?></div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
 
-        <div class="button-row">
-            <button type="submit">💾 Save Changes</button>
-        </div>
-    </form>
+        <form method="post">
 
-    <div class="back-links">
-        <a href="view_schedule.php?date=<?= $schedule['shift_date'] ?>">⬅ Back to Day Schedule</a>
-        <a href="calendar.php?year=<?= $year ?>&month=<?= $month ?>">📅 Back to Calendar</a>
+            <div class="form-group">
+                <label>Employee</label>
+                <select name="employee_id" required>
+                    <option value="">-- Select Employee --</option>
+                    <?php foreach ($employees as $emp): ?>
+                        <option value="<?= $emp['employee_id']; ?>"
+                            <?= $emp['employee_id'] == $schedule['employee_id'] ? 'selected' : ''; ?>>
+                            <?= htmlspecialchars($emp['name'] . " ({$emp['role']})"); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Shift Date</label>
+                <input type="date" name="shift_date"
+                       value="<?= htmlspecialchars($schedule['shift_date']); ?>" required>
+            </div>
+
+            <div class="form-group">
+                <label>Shift Start Time</label>
+                <input type="time" name="shift_start"
+                       value="<?= substr($schedule['shift_start'], 0, 5); ?>" required>
+            </div>
+
+            <div class="form-group">
+                <label>Shift End Time</label>
+                <input type="time" name="shift_end"
+                       value="<?= substr($schedule['shift_end'], 0, 5); ?>" required>
+            </div>
+
+            <div class="form-group">
+                <label>Notes (optional)</label>
+                <textarea name="notes" rows="3"><?= htmlspecialchars($schedule['notes']); ?></textarea>
+            </div>
+
+            <div class="button-row" style="margin-top: 20px;">
+                <button type="submit" class="btn-primary" style="padding: 12px 26px;">
+                    💾 Save Changes
+                </button>
+            </div>
+
+        </form>
+
     </div>
 
 </div>
 
-</body>
-</html>
+<?php include 'includes/footer.php'; ?>

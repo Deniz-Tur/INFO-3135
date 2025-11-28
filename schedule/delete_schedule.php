@@ -1,36 +1,34 @@
-<link rel="stylesheet" href="schedule.css">
-
 <?php
-include("../db.php");
+// schedule/delete_schedule.php
+session_start();
+require __DIR__ . '/../includes/db.php';
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-// Ensure schedule id exists
-$id = $_GET['id'] ?? null;
-if (!$id) {
-    die("No schedule ID provided.");
-}
-
-// Find schedule date for redirect
-$date_sql = "SELECT shift_date FROM schedules WHERE schedule_id = $id";
-$date_result = $conn->query($date_sql);
-
-if ($date_result->num_rows === 0) {
-    die("Error: Schedule not found.");
-}
-
-$row = $date_result->fetch_assoc();
-$shift_date = $row['shift_date'];
-
-// Delete query
-$delete_sql = "DELETE FROM schedules WHERE schedule_id = $id";
-
-if ($conn->query($delete_sql)) {
-    // Redirect back to the day list
-    header("Location: view_schedule.php?date=" . $shift_date);
+if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+    echo "Access denied. Admins only.";
     exit;
-} else {
-    echo "Error deleting schedule: " . $conn->error;
 }
-?>
+
+$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+if ($id <= 0) {
+    echo "Invalid schedule ID.";
+    exit;
+}
+
+// Get the schedule first so we know which date to redirect back to
+$stmt = $pdo->prepare("SELECT shift_date FROM schedules WHERE schedule_id = :id");
+$stmt->execute([':id' => $id]);
+$schedule = $stmt->fetch();
+
+if (!$schedule) {
+    echo "Schedule not found.";
+    exit;
+}
+
+$shiftDate = $schedule['shift_date'];
+
+// Delete and redirect back to the daily view
+$del = $pdo->prepare("DELETE FROM schedules WHERE schedule_id = :id");
+$del->execute([':id' => $id]);
+
+header('Location: view_schedule.php?date=' . urlencode($shiftDate));
+exit;
