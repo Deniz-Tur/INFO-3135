@@ -108,3 +108,50 @@ CREATE TABLE event_reservations (
         REFERENCES users(id)
         ON DELETE SET NULL
 );
+-- Add tables and reservations tables to golden_plate_db
+-- Run this in phpMyAdmin after your existing database setup
+
+USE golden_plate_db;
+
+-- ------------------------------------------------------
+-- 5. Tables Table (Restaurant Tables)
+-- ------------------------------------------------------
+DROP TABLE IF EXISTS reservations;
+DROP TABLE IF EXISTS tables;
+
+CREATE TABLE tables (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+     table_number VARCHAR(10) NOT NULL UNIQUE,
+      capacity INT NOT NULL,
+      status VARCHAR(20) DEFAULT 'available',
+     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Insert 10 restaurant tables
+INSERT INTO tables (table_number, capacity, status) VALUES
+('1', 2, 'available'),
+('2', 2, 'available'),
+('3', 4, 'available'),
+('4', 4, 'available'),
+('5', 6, 'available'),
+('6', 6, 'available'),
+('7', 8, 'available'),
+('8', 2, 'available'),
+('9', 4, 'available'),
+('10', 6, 'available');
+
+-- ------------------------------------------------------
+-- 6. Reservations Table (Table Bookings)
+-- ------------------------------------------------------
+CREATE TABLE reservations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    table_id INT NOT NULL,
+    reservation_date DATE NOT NULL,
+    reservation_time VARCHAR(20) NOT NULL,
+    party_size INT NOT NULL,
+    special_requests TEXT,
+    special_requests VARCHAR(20) DEFAULT 'confirmed',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
