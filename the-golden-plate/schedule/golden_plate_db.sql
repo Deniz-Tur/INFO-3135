@@ -68,84 +68,43 @@ INSERT INTO schedules (employee_id, shift_date, shift_start, shift_end, notes) V
 (2, '2025-11-26', '12:00:00', '20:00:00', 'Evening shift'),
 (3, '2025-11-27', '16:00:00', '23:00:00', 'Bar night shift'),
 (4, '2025-11-27', '09:00:00', '17:00:00', 'Manager on duty');
+-- ------------------------------------------------------
+-- 6. Events (for special days / occasions)
+-- ------------------------------------------------------
 
-
--- Add tables and reservations tables to golden_plate_db
--- Run this in phpMyAdmin after your existing database setup
-
-USE golden_plate_db;
+DROP TABLE IF EXISTS events;
+CREATE TABLE events (
+    event_id    INT AUTO_INCREMENT PRIMARY KEY,
+    title       VARCHAR(100) NOT NULL,
+    event_date  DATE NOT NULL,
+    start_time  TIME NULL,
+    end_time    TIME NULL,
+    capacity    INT NOT NULL,
+    description TEXT,
+    is_public   TINYINT(1) NOT NULL DEFAULT 1,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 -- ------------------------------------------------------
--- 5. Tables Table (Restaurant Tables)
+-- 7. Event Reservations (per event, with capacity)
 -- ------------------------------------------------------
-DROP TABLE IF EXISTS ⁠ reservations ⁠;
-DROP TABLE IF EXISTS ⁠ tables ⁠;
 
-CREATE TABLE ⁠ tables ⁠ (
-    ⁠ id ⁠ INT AUTO_INCREMENT PRIMARY KEY,
-    ⁠ table_number ⁠ VARCHAR(10) NOT NULL UNIQUE,
-    ⁠ capacity ⁠ INT NOT NULL,
-    ⁠ status ⁠ VARCHAR(20) DEFAULT 'available',
-    ⁠ created_at ⁠ TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+DROP TABLE IF EXISTS event_reservations;
+CREATE TABLE event_reservations (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    event_id    INT NOT NULL,
+    user_id     INT NULL,
+    guest_name  VARCHAR(100) NULL,
+    num_guests  INT NOT NULL,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
--- Insert 10 restaurant tables
-INSERT INTO ⁠ tables ⁠ (⁠ table_number ⁠, ⁠ capacity ⁠, ⁠ status ⁠) VALUES
-('1', 2, 'available'),
-('2', 2, 'available'),
-('3', 4, 'available'),
-('4', 4, 'available'),
-('5', 6, 'available'),
-('6', 6, 'available'),
-('7', 8, 'available'),
-('8', 2, 'available'),
-('9', 4, 'available'),
-('10', 6, 'available');
+    CONSTRAINT fk_event_res_event
+        FOREIGN KEY (event_id)
+        REFERENCES events(event_id)
+        ON DELETE CASCADE,
 
--- Add tables and reservations tables to golden_plate_db
--- Run this in phpMyAdmin after your existing database setup
-
-USE golden_plate_db;
-
--- ------------------------------------------------------
--- 5. Tables Table (Restaurant Tables)
--- ------------------------------------------------------
-DROP TABLE IF EXISTS ⁠ reservations ⁠;
-DROP TABLE IF EXISTS ⁠ tables ⁠;
-
-CREATE TABLE ⁠ tables ⁠ (
-    ⁠ id ⁠ INT AUTO_INCREMENT PRIMARY KEY,
-    ⁠ table_number ⁠ VARCHAR(10) NOT NULL UNIQUE,
-    ⁠ capacity ⁠ INT NOT NULL,
-    ⁠ status ⁠ VARCHAR(20) DEFAULT 'available',
-    ⁠ created_at ⁠ TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Insert 10 restaurant tables
-INSERT INTO ⁠ tables ⁠ (⁠ table_number ⁠, ⁠ capacity ⁠, ⁠ status ⁠) VALUES
-('1', 2, 'available'),
-('2', 2, 'available'),
-('3', 4, 'available'),
-('4', 4, 'available'),
-('5', 6, 'available'),
-('6', 6, 'available'),
-('7', 8, 'available'),
-('8', 2, 'available'),
-('9', 4, 'available'),
-('10', 6, 'available');
-
--- ------------------------------------------------------
--- 6. Reservations Table (Table Bookings)
--- ------------------------------------------------------
-CREATE TABLE ⁠ reservations ⁠ (
-    ⁠ id ⁠ INT AUTO_INCREMENT PRIMARY KEY,
-    ⁠ user_id ⁠ INT NOT NULL,
-    ⁠ table_id ⁠ INT NOT NULL,
-    ⁠ reservation_date ⁠ DATE NOT NULL,
-    ⁠ reservation_time ⁠ VARCHAR(20) NOT NULL,
-    ⁠ party_size ⁠ INT NOT NULL,
-    ⁠ special_requests ⁠ TEXT,
-    ⁠ status ⁠ VARCHAR(20) DEFAULT 'confirmed',
-    ⁠ created_at ⁠ TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ⁠ updated_at ⁠ TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    CONSTRAINT fk_event_res_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE SET NULL
+);

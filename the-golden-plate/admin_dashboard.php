@@ -39,7 +39,7 @@ $shifts = $shiftStmt->fetchAll();
 
 <h2 class="app-section-title">Admin Dashboard</h2>
 <p class="app-section-subtitle">
-    Manage users, employees, and staff schedules for Golden Plate.
+    Manage users, employees, staff schedules, and restaurant events for Golden Plate.
 </p>
 
 <!-- Quick actions -->
@@ -52,8 +52,14 @@ $shifts = $shiftStmt->fetchAll();
         <a href="schedule/calendar.php" class="btn btn-outline" style="margin-right:8px;">
             📅 View Schedule Calendar
         </a>
+        <!-- ✅ New: manage events -->
+        <a href="events/admin_events.php" class="btn btn-outline">
+            🎉 Manage Events
+        </a>
     </p>
 </div>
+
+
 
 <!-- Users -->
 <div class="card">

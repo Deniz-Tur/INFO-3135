@@ -1,11 +1,51 @@
 <?php
-// schedule/view_schedule.php
 session_start();
-require __DIR__ . '/../includes/db.php';
 
+chdir(__DIR__ . '/..');
+
+require 'includes/db.php';
+
+// Highlight current tab
+$activeTab = 'calendar';
+
+// Include header
+include 'includes/header.php';
+?>
+
+<!-- Load shared CSS -->
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="schedule.css">
+
+<!-- Hide header.php tabs -->
+<style>
+    nav.tabs-nav { display: none; }
+</style>
+
+<!-- Replace with same nav structure as calendar.php -->
+<nav class="tabs-nav">
+    <a href="/the-golden-plate/index.php" class="tab-link">
+        <span class="tab-icon">🏠</span> Home
+    </a>
+    <a href="/the-golden-plate/admin_dashboard.php" class="tab-link">
+        <span class="tab-icon">🛠</span> Admin Dashboard
+    </a>
+    <a href="/the-golden-plate/admin_reservations.php" class="tab-link">
+        <span class="tab-icon">📋</span> Reservations
+    </a>
+    <a href="/the-golden-plate/schedule/calendar.php"
+       class="tab-link active">
+        <span class="tab-icon">📆</span> Staff Calendar
+    </a>
+    <a href="/the-golden-plate/logout.php" class="tab-link">
+        <span class="tab-icon">🚪</span> Logout
+    </a>
+</nav>
+
+
+<?php
+// ================== LOAD DATA ==================
 $date = $_GET['date'] ?? date('Y-m-d');
 
-// Validate date format
 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
     $date = date('Y-m-d');
 }
@@ -23,65 +63,82 @@ $shifts = $stmt->fetchAll();
 
 $isAdmin = isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Schedule for <?php echo htmlspecialchars($date); ?></title>
-    <link rel="stylesheet" href="schedule.css">
-</head>
-<body>
 
-<div class="form-wrapper">
-    <h1>Schedule for <?php echo htmlspecialchars($date); ?></h1>
 
-    <div class="back-links">
-        <a href="calendar.php">&laquo; Back to Calendar</a>
-        <?php if ($isAdmin): ?>
-            | <a href="add_schedule.php?date=<?php echo htmlspecialchars($date); ?>">➕ Add Schedule</a>
-        <?php endif; ?>
+<div class="app-wrapper">
+
+    <!-- ===== Header Card ===== -->
+    <div class="card card-page-header">
+
+        <div class="page-title">
+            Schedule for <?= htmlspecialchars($date) ?>
+        </div>
+
+        <div class="action-row view-header">
+
+            <a href="calendar.php" class="btn-white">&larr; Back to Calendar</a>
+
+            <?php if ($isAdmin): ?>
+                <a href="add_schedule.php?date=<?= htmlspecialchars($date) ?>" 
+                    class="btn-add-schedule">
+                    <span style="color:#8f7aec;">➕</span> Add Schedule
+                </a>
+            <?php endif; ?>
+
     </div>
 
-    <?php if (empty($shifts)): ?>
-        <p style="margin-top:15px;">No shifts for this day.</p>
-    <?php else: ?>
-        <table class="schedule-table" style="margin-top:20px;">
+</div>
+    </div>
+
+    <!-- ===== Main Table Card ===== -->
+    <div class="card">
+
+        <?php if (empty($shifts)): ?>
+            <p class="empty-text">No shifts for this day.</p>
+        <?php else: ?>
+
+        <table class="table schedule-table">
             <thead>
-            <tr>
-                <th>Employee</th>
-                <th>Role</th>
-                <th>Start</th>
-                <th>End</th>
-                <th>Notes</th>
-                <?php if ($isAdmin): ?>
-                    <th>Actions</th>
-                <?php endif; ?>
-            </tr>
-            </thead>
-            <tbody>
-            <?php foreach ($shifts as $s): ?>
                 <tr>
-                    <td><?php echo htmlspecialchars($s['employee_name']); ?></td>
-                    <td><?php echo htmlspecialchars($s['employee_role']); ?></td>
-                    <td><?php echo htmlspecialchars(substr($s['shift_start'], 0, 5)); ?></td>
-                    <td><?php echo htmlspecialchars(substr($s['shift_end'], 0, 5)); ?></td>
-                    <td><?php echo htmlspecialchars($s['notes']); ?></td>
+                    <th>Employee</th>
+                    <th>Role</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Notes</th>
+                    <?php if ($isAdmin): ?><th>Actions</th><?php endif; ?>
+                </tr>
+            </thead>
+
+            <tbody>
+                <?php foreach ($shifts as $s): ?>
+                <tr>
+                    <td><?= htmlspecialchars($s['employee_name']) ?></td>
+                    <td><?= htmlspecialchars($s['employee_role']) ?></td>
+                    <td><?= substr($s['shift_start'],0,5) ?></td>
+                    <td><?= substr($s['shift_end'],0,5) ?></td>
+                    <td><?= htmlspecialchars($s['notes']) ?></td>
+
                     <?php if ($isAdmin): ?>
-                        <td>
-                            <a class="link-btn" href="edit_schedule.php?id=<?php echo (int)$s['schedule_id']; ?>">Edit</a>
-                            |
-                            <a class="link-btn delete" href="delete_schedule.php?id=<?php echo (int)$s['schedule_id']; ?>"
-                               onclick="return confirm('Are you sure you want to delete this schedule?');">
-                                Delete
-                            </a>
-                        </td>
+                    <td class="action-buttons">
+                        <a class="btn-small btn-white"
+                           href="edit_schedule.php?id=<?= (int)$s['schedule_id'] ?>">Edit</a>
+
+                        <a class="btn-small btn-danger"
+                           href="delete_schedule.php?id=<?= (int)$s['schedule_id'] ?>"
+                           onclick="return confirm('Delete this shift?');">
+                            Delete
+                        </a>
+                    </td>
                     <?php endif; ?>
                 </tr>
-            <?php endforeach; ?>
+                <?php endforeach; ?>
             </tbody>
         </table>
-    <?php endif; ?>
+
+        <?php endif; ?>
+
+    </div>
+
 </div>
 
-</body>
-</html>
+<?php include 'includes/footer.php'; ?>

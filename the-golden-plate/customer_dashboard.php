@@ -10,7 +10,7 @@ if (($_SESSION['user_role'] ?? '') !== 'customer') {
     echo '<div class="card" style="border-left:4px solid #c0392b;">
             <p class="card-text">Access denied. Customers only.</p>
           </div>';
-    include 'includes.footer.php';
+    include 'includes/footer.php';
     exit;
 }
 ?>
@@ -23,7 +23,7 @@ if (($_SESSION['user_role'] ?? '') !== 'customer') {
 <div class="card">
     <h3 class="card-title">Make a Reservation</h3>
     <p class="card-text">Choose your table, date, and time.</p>
-    <a href="reservations.php" class="btn btn-primary">Reserve a Table</a>
+    <a href="booking.php" class="btn btn-primary">Reserve a Table</a>
 </div>
 
 <div class="card">
@@ -32,10 +32,11 @@ if (($_SESSION['user_role'] ?? '') !== 'customer') {
     <a href="my_reservations.php" class="btn btn-outline">View My Reservations</a>
 </div>
 
+<!-- ✅ Events (not staff schedule) -->
 <div class="card">
-    <h3 class="card-title">Events Calendar</h3>
-    <p class="card-text">Check restaurant events and busy days.</p>
-    <a href="schedule/calendar.php" class="btn btn-outline">🎉 View Events Calendar</a>
+    <h3 class="card-title">Events</h3>
+    <p class="card-text">Check restaurant events and book your spot.</p>
+    <a href="events/events.php" class="btn btn-outline">🎉 View Events</a>
 </div>
 
 <?php include 'includes/footer.php'; ?>

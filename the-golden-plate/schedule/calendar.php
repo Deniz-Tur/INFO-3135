@@ -1,36 +1,87 @@
 <?php
-// schedule/calendar.php
 session_start();
-require __DIR__ . '/../includes/db.php';
 
-// Determine year & month
-$year  = isset($_GET['year'])  ? (int)$_GET['year']  : (int)date('Y');
+// Move working directory to project root so that include paths work correctly
+chdir(__DIR__ . '/..');
+
+// Include database
+require 'includes/db.php';
+
+// Highlight this tab in the nav
+$activeTab = 'calendar';
+
+// Include the shared header
+include 'includes/header.php';
+?>
+
+
+<!-- Load CSS (URL-relative paths, not affected by chdir) -->
+<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="schedule.css">
+
+<!-- Hide the original navigation bar from header.php -->
+<style>
+    nav.tabs-nav { display: none; }
+</style>
+
+<!-- Custom navigation bar with correct absolute paths -->
+<nav class="tabs-nav">
+
+    <!-- Home -->
+    <a href="/the-golden-plate/index.php"
+       class="tab-link <?php echo $activeTab === 'home' ? 'active' : ''; ?>">
+        <span class="tab-icon">🏠</span> Home
+    </a>
+
+    <!-- Admin Dashboard -->
+    <a href="/the-golden-plate/admin_dashboard.php"
+       class="tab-link <?php echo $activeTab === 'admin' ? 'active' : ''; ?>">
+        <span class="tab-icon">🛠</span> Admin Dashboard
+    </a>
+
+    <!-- Reservations -->
+    <a href="/the-golden-plate/admin_reservations.php"
+       class="tab-link <?php echo $activeTab === 'admin_reservations' ? 'active' : ''; ?>">
+        <span class="tab-icon">📋</span> Reservations
+    </a>
+
+    <!-- Staff Calendar (active tab) -->
+    <a href="/the-golden-plate/schedule/calendar.php"
+       class="tab-link active">
+        <span class="tab-icon">📆</span> Staff Calendar
+    </a>
+
+    <!-- Logout -->
+    <a href="/the-golden-plate/logout.php" class="tab-link">
+        <span class="tab-icon">🚪</span> Logout
+    </a>
+</nav>
+
+
+<?php
+// =======================================
+//  Calendar Logic
+// =======================================
+
+// Determine current year and month
+$year  = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
 $month = isset($_GET['month']) ? (int)$_GET['month'] : (int)date('n');
 
-if ($year < 1970 || $year > 2100) {
-    $year = (int)date('Y');
-}
-if ($month < 1 || $month > 12) {
-    $month = (int)date('n');
-}
+// Validate
+if ($year < 1970 || $year > 2100) $year = date('Y');
+if ($month < 1 || $month > 12)   $month = date('n');
 
 $firstOfMonth = new DateTime("$year-$month-01");
-$daysInMonth  = (int)$firstOfMonth->format('t');
-$startWeekday = (int)$firstOfMonth->format('w'); // 0 (Sun) - 6 (Sat)
+$daysInMonth  = $firstOfMonth->format('t');
+$startWeekday = $firstOfMonth->format('w');
 $monthName    = $firstOfMonth->format('F Y');
 
-// Compute prev / next month
-$prev = clone $firstOfMonth;
-$prev->modify('-1 month');
-$next = clone $firstOfMonth;
-$next->modify('+1 month');
+$prev = (clone $firstOfMonth)->modify('-1 month');
+$next = (clone $firstOfMonth)->modify('+1 month');
 
-// Fetch schedules for this whole month
-$monthStart = $firstOfMonth->format('Y-m-01');
-$monthEnd   = $firstOfMonth->format('Y-m-t');
-
+// Query shifts for this month
 $sql = "
-    SELECT s.*, e.name AS employee_name, e.role AS employee_role
+    SELECT s.*, e.name AS employee_name
     FROM schedules s
     JOIN employees e ON s.employee_id = e.employee_id
     WHERE s.shift_date BETWEEN :start AND :end
@@ -38,106 +89,93 @@ $sql = "
 ";
 $stmt = $pdo->prepare($sql);
 $stmt->execute([
-    ':start' => $monthStart,
-    ':end'   => $monthEnd
+    ':start' => $firstOfMonth->format('Y-m-01'),
+    ':end'   => $firstOfMonth->format('Y-m-t')
 ]);
 $schedules = $stmt->fetchAll();
 
-// Group by date
+// Group shifts by date
 $shiftsByDate = [];
-foreach ($schedules as $row) {
-    $d = $row['shift_date'];
-    if (!isset($shiftsByDate[$d])) {
-        $shiftsByDate[$d] = [];
-    }
-    $shiftsByDate[$d][] = $row;
+foreach ($schedules as $shift) {
+    $shiftsByDate[$shift['shift_date']][] = $shift;
 }
 
-// Today
 $today = date('Y-m-d');
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Staff Schedule Calendar - <?php echo htmlspecialchars($monthName); ?></title>
-    <link rel="stylesheet" href="schedule.css">
-</head>
-<body>
 
-<h1>Staff Schedule Calendar</h1>
+<h2 class="app-section-title">Staff Schedule Calendar</h2>
 
+<!-- Month Navigation -->
 <div class="calendar-nav">
-    <a href="calendar.php?year=<?php echo $prev->format('Y'); ?>&month=<?php echo $prev->format('n'); ?>">
-        &laquo; Previous
-    </a>
-    <strong><?php echo htmlspecialchars($monthName); ?></strong>
-    <a href="calendar.php?year=<?php echo $next->format('Y'); ?>&month=<?php echo $next->format('n'); ?>">
-        Next &raquo;
-    </a>
+    <a href="?year=<?= $prev->format('Y'); ?>&month=<?= $prev->format('n'); ?>">&laquo; Previous</a>
+
+    <strong><?= htmlspecialchars($monthName); ?></strong>
+
+    <a href="?year=<?= $next->format('Y'); ?>&month=<?= $next->format('n'); ?>">Next &raquo;</a>
+
+    <a href="calendar.php" class="today-btn">Today</a>
 </div>
 
+<!-- Add Schedule Button -->
+<?php if($_SESSION['user_role'] === 'admin'): ?>
+<div class="add-btn-center">
+    <a href="add_schedule.php" class="btn-primary">➕ Add Schedule</a>
+</div>
+<?php endif; ?>
+
+<!-- Calendar Grid -->
 <div class="calendar-container">
-    <!-- Weekday header -->
+
+    <!-- Weekday Labels -->
     <div class="calendar-grid weekdays">
-        <div>Sun</div>
-        <div>Mon</div>
-        <div>Tue</div>
-        <div>Wed</div>
-        <div>Thu</div>
-        <div>Fri</div>
-        <div>Sat</div>
+        <div>Sun</div><div>Mon</div><div>Tue</div>
+        <div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
     </div>
 
     <!-- Days -->
     <div class="calendar-grid">
         <?php
-        // empty boxes before first day
+        // Empty boxes before the 1st
         for ($i = 0; $i < $startWeekday; $i++) {
             echo '<div class="day-box empty"></div>';
         }
 
-        for ($day = 1; $day <= $daysInMonth; $day++) {
-            $dateStr = sprintf('%04d-%02d-%02d', $year, $month, $day);
+        // Days of the month
+        for ($day=1; $day <= $daysInMonth; $day++) {
+
+            $dateStr = sprintf("%04d-%02d-%02d", $year, $month, $day);
             $isToday = ($dateStr === $today);
 
-            $classes = 'day-box';
-            if ($isToday) {
-                $classes .= ' today';
-            }
-
-            echo '<div class="' . $classes . '">';
-
-            echo '<div class="day-number">' . $day . '</div>';
+            echo '<div class="day-box'.($isToday ? ' today' : '').'">';
+            echo '<div class="day-number">'.$day.'</div>';
 
             // Show shifts
-            if (!empty($shiftsByDate[$dateStr])) {
-                foreach ($shiftsByDate[$dateStr] as $shift) {
-                    $start = substr($shift['shift_start'], 0, 5);
-                    $end   = substr($shift['shift_end'], 0, 5);
-                    $emp   = htmlspecialchars($shift['employee_name']);
-                    echo '<div class="shift-box">';
-                    echo $emp . '<br>' . $start . ' - ' . $end;
-                    echo '</div>';
+            if(isset($shiftsByDate[$dateStr])) {
+                foreach(array_slice($shiftsByDate[$dateStr],0,2) as $shift){
+                    $start = substr($shift['shift_start'],0,5);
+                    $end = substr($shift['shift_end'],0,5);
+                    $color = "shift-color-".($shift['employee_id'] % 5);
+
+                    echo "<div class='shift-box $color'>".
+                            htmlspecialchars($shift['employee_name']).
+                            "<br>$start - $end
+                          </div>";
+                }
+                if(count($shiftsByDate[$dateStr]) > 2){
+                    echo '<div class="shift-more">+'.(count($shiftsByDate[$dateStr]) - 2).' more</div>';
                 }
             }
 
-            // Link to full list for this day
-            echo '<div style="margin-top:6px; font-size:11px;">';
-            echo '<a href="view_schedule.php?date=' . $dateStr . '">View day &raquo;</a>';
-            echo '</div>';
+            // View link
+            echo '<div class="view-day-left">
+                    <a href="view_schedule.php?date='.$dateStr.'">View 🔍</a>
+                  </div>';
 
-            echo '</div>';
+            echo '</div>'; // day-box
         }
         ?>
     </div>
+
 </div>
 
-<div class="calendar-nav" style="margin-top:20px;">
-    <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
-        <a href="add_schedule.php">➕ Add New Schedule</a>
-    <?php endif; ?>
-</div>
-
-</body>
-</html>
+<?php include __DIR__ . '/../includes/footer.php'; ?>
